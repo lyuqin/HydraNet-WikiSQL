@@ -50,21 +50,9 @@ if __name__ == "__main__":
     label_file = "wikisql_master/data/test.jsonl"
     model_out_file = "wikisql_master/test_model_out.pkl"
 
-    # Old Best
-    # model_path = "output/20200117_230155"
-    # epoch = 4
-
-    # My Best
-    # model_path = "output/20200207_103903"
-    # epoch = 3
-
     # All Best
     model_path = "output/20200207_105347"
     epoch = 4
-
-    # BERT
-    # model_path = "output/20200226_151300"
-    # epoch = 4
 
     engine = DBEngine(db_file)
     config = utils.read_conf(os.path.join(model_path, "model.conf"))
