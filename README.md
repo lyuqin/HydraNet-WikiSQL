@@ -17,3 +17,6 @@ Once Python and Pytorch is installed, run `pip install -r requirements.txt` to i
 ## Evaluate
 1. Modify model, input and output settings in `wikisql_prediction.py` and run it.
 2. Run WikiSQL evaluation script to get official numbers.
+
+## Trained Model
+Trained model that can generate reported number on WikiSQL leaderboard is available [here](https://drive.google.com/file/d/1scefU7X0X-m3-sU3mW-HGyc8ngYNZHmn/view?usp=sharing). 
