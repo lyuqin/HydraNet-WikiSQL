@@ -12,7 +12,8 @@ class HydraTorch(BaseModel):
         self.model = HydraNet(config)
         if torch.cuda.device_count() > 1:
             self.model = nn.DataParallel(self.model)
-        self.model.to(torch.device("cuda:0"))
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
 
         self.optimizer, self.scheduler = None, None
 
@@ -36,7 +37,7 @@ class HydraTorch(BaseModel):
 
         self.model.train()
         for k, v in batch.items():
-            batch[k] = v.to(torch.device("cuda:0"))
+            batch[k] = v.to(self.device)
         batch_loss = torch.mean(self.model(**batch)["loss"])
         batch_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
@@ -51,7 +52,7 @@ class HydraTorch(BaseModel):
         model_outputs = {}
         batch_size = 512
         for start_idx in range(0, model_inputs["input_ids"].shape[0], batch_size):
-            input_tensor = {k: torch.from_numpy(model_inputs[k][start_idx:start_idx+batch_size]).to(torch.device("cuda:0")) for k in ["input_ids", "input_mask", "segment_ids"]}
+            input_tensor = {k: torch.from_numpy(model_inputs[k][start_idx:start_idx+batch_size]).to(self.device) for k in ["input_ids", "input_mask", "segment_ids"]}
             with torch.no_grad():
                 model_output = self.model(**input_tensor)
             for k, out_tensor in model_output.items():
@@ -69,12 +70,19 @@ class HydraTorch(BaseModel):
     def save(self, model_path, epoch):
         if "SAVE" in self.config and "DEBUG" not in self.config:
             save_path = os.path.join(model_path, "model_{0}.pt".format(epoch))
-            torch.save(self.model.state_dict(), save_path)
+            if torch.cuda.device_count() > 1:
+                torch.save(self.model.module.state_dict(), save_path)
+            else:
+                torch.save(self.model.state_dict(), save_path)
             print("Model saved in path: %s" % save_path)
 
     def load(self, model_path, epoch):
         pt_path = os.path.join(model_path, "model_{0}.pt".format(epoch))
-        self.model.load_state_dict(torch.load(pt_path))
+        loaded_dict = torch.load(pt_path, map_location=torch.device(self.device))
+        if torch.cuda.device_count() > 1:
+            self.model.module.load_state_dict(loaded_dict)
+        else:
+            self.model.load_state_dict(loaded_dict)
         print("PyTorch model loaded from {0}".format(pt_path))
 
 class HydraNet(nn.Module):
@@ -106,12 +114,14 @@ class HydraNet(nn.Module):
             bert_output, pooled_output = self.base_model(
                 input_ids=input_ids,
                 attention_mask=input_mask,
-                token_type_ids=None)
+                token_type_ids=None,
+                return_dict=False)
         else:
             bert_output, pooled_output = self.base_model(
                 input_ids=input_ids,
                 attention_mask=input_mask,
-                token_type_ids=segment_ids)
+                token_type_ids=segment_ids,
+                return_dict=False)
 
         bert_output = self.dropout(bert_output)
         pooled_output = self.dropout(pooled_output)
