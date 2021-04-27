@@ -38,16 +38,16 @@ def print_metric(label_file, pred_file):
 
 if __name__ == "__main__":
     # in_file = "data/wikidev.jsonl"
-    # out_file = "WikiSQL/dev_out.jsonl"
+    # out_file = "output/dev_out.jsonl"
     # label_file = "WikiSQL/data/dev.jsonl"
     # db_file = "WikiSQL/data/dev.db"
-    # model_out_file = "WikiSQL/dev_model_out.pkl"
+    # model_out_file = "output/dev_model_out.pkl"
 
     in_file = "data/wikitest.jsonl"
-    out_file = "WikiSQL/test_out.jsonl"
+    out_file = "output/test_out.jsonl"
     label_file = "WikiSQL/data/test.jsonl"
     db_file = "WikiSQL/data/test.db"
-    model_out_file = "WikiSQL/test_model_out.pkl"
+    model_out_file = "output/test_model_out.pkl"
 
     # All Best
     model_path = "output/20200207_105347"
