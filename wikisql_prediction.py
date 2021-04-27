@@ -37,18 +37,17 @@ def print_metric(label_file, pred_file):
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = ""
     # in_file = "data/wikidev.jsonl"
-    # db_file = "data/wikisql/dev.db"
-    # out_file = "wikisql_master/dev_out.jsonl"
-    # label_file = "wikisql_master/data/dev.jsonl"
-    # model_out_file = "wikisql_master/dev_model_out.pkl"
+    # out_file = "WikiSQL/dev_out.jsonl"
+    # label_file = "WikiSQL/data/dev.jsonl"
+    # db_file = "WikiSQL/data/dev.db"
+    # model_out_file = "WikiSQL/dev_model_out.pkl"
 
     in_file = "data/wikitest.jsonl"
-    db_file = "data/wikisql/test.db"
-    out_file = "wikisql_master/test_out.jsonl"
-    label_file = "wikisql_master/data/test.jsonl"
-    model_out_file = "wikisql_master/test_model_out.pkl"
+    out_file = "WikiSQL/test_out.jsonl"
+    label_file = "WikiSQL/data/test.jsonl"
+    db_file = "WikiSQL/data/test.db"
+    model_out_file = "WikiSQL/test_model_out.pkl"
 
     # All Best
     model_path = "output/20200207_105347"
@@ -66,9 +65,12 @@ if __name__ == "__main__":
 
     if "DEBUG" in config:
         model_out_file = model_out_file + ".partial"
-    model_outputs = model.dataset_inference(pred_data)
-    pickle.dump(model_outputs, open(model_out_file, "wb"))
-    # model_outputs = pickle.load(open(model_out_file, "rb"))
+
+    if os.path.exists(model_out_file):
+        model_outputs = pickle.load(open(model_out_file, "rb"))
+    else:
+        model_outputs = model.dataset_inference(pred_data)
+        pickle.dump(model_outputs, open(model_out_file, "wb"))
 
     print("===HydraNet===")
     pred_sqls = model.predict_SQL(pred_data, model_outputs=model_outputs)

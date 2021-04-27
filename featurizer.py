@@ -80,9 +80,7 @@ class HydraFeaturizer(object):
             "real": "[unused2]"}
 
     def get_input_feature(self, example: SQLExample, config):
-        max_query_length = int(config["max_query_length"])
-        max_column_length = int(config["max_column_length"])
-        max_total_length = max_column_length + max_query_length
+        max_total_length = int(config["max_total_length"])
 
         input_feature = InputFeature(
             example.question,
@@ -116,9 +114,9 @@ class HydraFeaturizer(object):
                 tokenize_result = self.tokenizer.encode_plus(
                     col_type + " " + column,
                     tokens,
+                    padding="max_length",
                     max_length=max_total_length,
-                    truncation_strategy="longest_first",
-                    pad_to_max_length=True,
+                    truncation=True,
                     add_prefix_space=True
                 )
             else:
@@ -131,15 +129,20 @@ class HydraFeaturizer(object):
                 )
 
             input_ids = tokenize_result["input_ids"]
-            segment_ids = tokenize_result["token_type_ids"]
             input_mask = tokenize_result["attention_mask"]
 
             tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
             column_token_length = 0
-            for i, sid in enumerate(segment_ids):
-                if sid == 1:
-                    column_token_length = i
+            for i, token_id in enumerate(input_ids):
+                if token_id == self.tokenizer.sep_token_id:
+                    column_token_length = i + 2
                     break
+            segment_ids = [0] * max_total_length
+            for i in range(column_token_length, max_total_length):
+                if input_mask[i] == 0:
+                    break
+                segment_ids[i] = 1
+
             subword_to_word = [0] * column_token_length + subword_to_word
             word_to_subword = [(pos[0]+column_token_length, pos[1]+column_token_length) for pos in word_to_subword]
 
@@ -157,9 +160,7 @@ class HydraFeaturizer(object):
         return input_feature
 
     def fill_label_feature(self, example: SQLExample, input_feature: InputFeature, config):
-        max_query_length = int(config["max_query_length"])
-        max_column_length = int(config["max_column_length"])
-        max_total_length = max_column_length + max_query_length
+        max_total_length = int(config["max_total_length"])
 
         columns = [c[0] for c in example.column_meta]
         col_num = len(columns)

@@ -165,7 +165,7 @@ def get_schema(tables):
 
 
 if __name__ == "__main__":
-    data_path = os.path.join("data", "wikisql")
+    data_path = os.path.join("WikiSQL", "data")
     for phase in ["train", "dev", "test"]:
         src_file = os.path.join(data_path, phase + ".jsonl")
         schema_file = os.path.join(data_path, phase + ".tables.jsonl")
