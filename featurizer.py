@@ -123,9 +123,10 @@ class HydraFeaturizer(object):
                 tokenize_result = self.tokenizer.encode_plus(
                     col_type + " " + column,
                     tokens,
+                    padding="max_length",
                     max_length=max_total_length,
                     truncation_strategy="longest_first",
-                    pad_to_max_length=True,
+                    truncation=True,
                 )
 
             input_ids = tokenize_result["input_ids"]
@@ -133,15 +134,22 @@ class HydraFeaturizer(object):
 
             tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
             column_token_length = 0
-            for i, token_id in enumerate(input_ids):
-                if token_id == self.tokenizer.sep_token_id:
-                    column_token_length = i + 2
-                    break
-            segment_ids = [0] * max_total_length
-            for i in range(column_token_length, max_total_length):
-                if input_mask[i] == 0:
-                    break
-                segment_ids[i] = 1
+            if self.config["base_class"] == "roberta":
+                for i, token_id in enumerate(input_ids):
+                    if token_id == self.tokenizer.sep_token_id:
+                        column_token_length = i + 2
+                        break
+                segment_ids = [0] * max_total_length
+                for i in range(column_token_length, max_total_length):
+                    if input_mask[i] == 0:
+                        break
+                    segment_ids[i] = 1
+            else:
+                for i, token_id in enumerate(input_ids):
+                    if token_id == self.tokenizer.sep_token_id:
+                        column_token_length = i + 1
+                        break
+                segment_ids = tokenize_result["token_type_ids"]
 
             subword_to_word = [0] * column_token_length + subword_to_word
             word_to_subword = [(pos[0]+column_token_length, pos[1]+column_token_length) for pos in word_to_subword]
@@ -190,7 +198,6 @@ class HydraFeaturizer(object):
                 input_feature.value_start[colidx] = s
                 e = input_feature.word_to_subword[colidx][se[1]-1][1]-1
                 input_feature.value_end[colidx] = e
-
                 assert s < max_total_length and input_feature.input_mask[colidx][s] == 1
                 assert e < max_total_length and input_feature.input_mask[colidx][e] == 1
 
